@@ -23,14 +23,18 @@ sys.path.insert(0, app_dir)
 load_dotenv()
 
 # Import app modules after setting up the path
+HAS_FULL_IMPORTS = False
 try:
+    # Try to import core modules
     from core.config import settings
     from core.database import engine, Base
     from api.v1.api import api_router
     from services.background_tasks import start_background_tasks, stop_background_tasks
     HAS_FULL_IMPORTS = True
+    print("✅ All modules imported successfully")
 except ImportError as e:
-    print(f"Warning: Some modules not available: {e}")
+    print(f"⚠️ Running in simplified mode due to import issues: {e}")
+    print("⚠️ Some features may not be available")
     HAS_FULL_IMPORTS = False
 
 @asynccontextmanager
@@ -51,7 +55,7 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             print(f"⚠️ Some services failed to start: {e}")
     else:
-        print("⚠️ Running in simplified mode")
+        print("⚠️ Running in simplified mode - limited functionality")
     
     yield
     
@@ -95,6 +99,7 @@ if HAS_FULL_IMPORTS:
         print("✅ API routes loaded")
     except Exception as e:
         print(f"⚠️ Failed to load API routes: {e}")
+        HAS_FULL_IMPORTS = False
 
 @app.get("/")
 async def root():
@@ -129,6 +134,15 @@ async def health_check():
         health_status["services"]["api_routes"] = "not_available"
     
     return health_status
+
+@app.get("/test")
+async def test_endpoint():
+    """Test endpoint for basic functionality"""
+    return {
+        "message": "Test endpoint working!",
+        "status": "success",
+        "mode": "full" if HAS_FULL_IMPORTS else "simplified"
+    }
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
