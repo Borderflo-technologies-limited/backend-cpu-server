@@ -18,10 +18,8 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy app
-COPY app/ ./app/
-COPY local_storage/ ./local_storage/
-COPY .env.example .env
+# Copy the entire app directory structure
+COPY . .
 
 EXPOSE 8000
 
