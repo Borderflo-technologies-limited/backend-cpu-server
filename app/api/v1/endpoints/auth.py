@@ -60,7 +60,9 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)) -> Any:
         email=db_user.email,
         full_name=db_user.full_name,
         is_active=db_user.is_active,
-        is_verified=db_user.is_verified
+        is_verified=db_user.is_verified,
+        created_at=db_user.created_at,
+        updated_at=db_user.updated_at
     )
 
 
