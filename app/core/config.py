@@ -69,7 +69,7 @@ class Settings(BaseSettings):
     PRE_GENERATION_ENABLED: bool = True
     
     # AI Service Configuration
-    GROQ_API_KEY: str = ""
+    GROQ_API_KEY: str = "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"
     
     # Audio/Video Storage
     AUDIO_STORAGE_PATH: str = "storage/audio"
