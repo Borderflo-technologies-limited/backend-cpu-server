@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
-Main FastAPI application for Visa AI Interviewer CPU Server
-Handles authentication, user management, interview sessions, and GPU coordination
+FastAPI application for Visa AI Interviewer CPU Server
+Works on both traditional pods and serverless
 """
 
 import os
 import sys
+import json
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
@@ -39,7 +40,7 @@ except ImportError as e:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan manager"""
+    """Application lifespan manager for traditional pods"""
     # Startup
     print("🚀 Starting Visa AI Interviewer CPU Server...")
     
@@ -155,6 +156,62 @@ async def global_exception_handler(request, exc):
         }
     )
 
+# RunPod Serverless Handler (for serverless mode)
+async def handler(job):
+    """
+    Main handler function for RunPod serverless
+    This function is called for each request
+    """
+    try:
+        print(f"🚀 Processing job: {job.get('id', 'unknown')}")
+        
+        # Extract input from the job
+        job_input = job.get("input", {})
+        
+        # Check if this is an HTTP request
+        if "http_method" in job_input:
+            return await handle_http_request(job_input)
+        
+        # Default response for non-HTTP requests
+        return {
+            "status": "success",
+            "message": "Visa AI Interviewer CPU Server is running",
+            "mode": "full" if HAS_FULL_IMPORTS else "simplified"
+        }
+        
+    except Exception as e:
+        print(f"❌ Error processing job: {e}")
+        return {
+            "status": "error",
+            "error": str(e)
+        }
+
+async def handle_http_request(job_input):
+    """Handle HTTP-like requests from RunPod"""
+    method = job_input.get("http_method", "GET")
+    path = job_input.get("path", "/")
+    headers = job_input.get("headers", {})
+    body = job_input.get("body", "")
+    
+    print(f"📡 HTTP {method} {path}")
+    
+    # Route the request based on path
+    if path == "/" or path == "":
+        return await root()
+    elif path == "/health":
+        return await health_check()
+    elif path == "/test":
+        return await test_endpoint()
+    elif path == "/docs":
+        return {"message": "API documentation available", "status": "info"}
+    else:
+        return {
+            "status": "not_found",
+            "message": f"Endpoint {path} not found",
+            "available_endpoints": ["/", "/health", "/test", "/docs"]
+        }
+
+# For traditional pod execution
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",
