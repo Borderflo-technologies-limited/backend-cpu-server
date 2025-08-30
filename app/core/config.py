@@ -6,6 +6,7 @@ Configuration settings for Visa AI Interviewer CPU Server
 from typing import List
 from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
 
@@ -32,9 +33,9 @@ class Settings(BaseSettings):
     LOCAL_STORAGE_PATH: str = "./local_storage"
     
     # GPU Server Communication (defaults for local docker-compose)
-    GPU_SERVER_BASE_URL: str = "http://localhost:8000"
-    VIDEO_GENERATION_URL: str = "http://localhost:8001"
-    EVALUATION_AGENT_URL: str = "http://localhost:8002"
+    GPU_SERVER_BASE_URL: str = os.getenv("GPU_SERVER_BASE_URL", "https://dyet7q0rq0ntg9-8000.proxy.runpod.net")
+    VIDEO_GENERATION_URL: str = os.getenv("VIDEO_GENERATION_URL", "https://hjwymndlz5f4xe-8001.proxy.runpod.net")
+    EVALUATION_AGENT_URL: str = os.getenv("EVALUATION_AGENT_URL", "https://ft5vi4h6gxqku8-8002.proxy.runpod.net")
     
     # RunPod Configuration
     RUNPOD_API_KEY: str = ""
@@ -74,11 +75,10 @@ class Settings(BaseSettings):
     AUDIO_STORAGE_PATH: str = "storage/audio"
     VIDEO_STORAGE_PATH: str = "storage/videos"
     
-    # GPU Service URLs
-    VIDEO_SERVICE_HOST: str = "localhost"
-    VIDEO_SERVICE_PORT: int = 8001
-    EVALUATION_SERVICE_HOST: str = "localhost"
-    EVALUATION_SERVICE_PORT: int = 8002
+    # GPU Service URLs - Use environment variables for RunPod deployment
+    # Default to actual RunPod URLs, but allow environment override
+    VIDEO_SERVICE_HOST: str = os.getenv("VIDEO_SERVICE_HOST", "hjwymndlz5f4xe-8001.proxy.runpod.net")
+    EVALUATION_SERVICE_HOST: str = os.getenv("EVALUATION_SERVICE_HOST", "ft5vi4h6gxqku8-8002.proxy.runpod.net")
     
     class Config:
         env_file = ".env"

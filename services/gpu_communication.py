@@ -20,8 +20,9 @@ class GPUCommunicationService:
     """Service for communicating with GPU servers"""
     
     def __init__(self):
-        self.video_service_url = f"http://{settings.VIDEO_SERVICE_HOST}:{settings.VIDEO_SERVICE_PORT}"
-        self.evaluation_service_url = f"http://{settings.EVALUATION_SERVICE_HOST}:{settings.EVALUATION_SERVICE_PORT}"
+        # Use full URLs directly instead of constructing from host + port
+        self.video_service_url = settings.VIDEO_GENERATION_URL
+        self.evaluation_service_url = settings.EVALUATION_AGENT_URL
         self.timeout = aiohttp.ClientTimeout(total=300)  # 5 minutes
         
     async def check_gpu_services_health(self) -> Dict[str, Any]:
