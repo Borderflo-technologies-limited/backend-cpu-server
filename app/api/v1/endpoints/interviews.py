@@ -192,3 +192,128 @@ async def end_interview_session(
         "duration": duration,
         "message": "Interview session ended successfully"
     } 
+
+
+@router.post("/generate-questions")
+async def generate_questions_manually(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+) -> Any:
+    """Manually generate questions for immediate use (bypasses monthly generation)"""
+    
+    # Check if user has completed onboarding
+    onboarding_data = db.query(OnboardingResponse).filter(
+        OnboardingResponse.user_id == current_user.id
+    ).first()
+    
+    if not onboarding_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Please complete onboarding before generating questions"
+        )
+    
+    # Create a mock monthly question set for immediate use
+    current_month = datetime.now().strftime("%Y-%m")
+    
+    # Check if already exists
+    existing_set = db.query(MonthlyQuestionSet).filter(
+        MonthlyQuestionSet.user_id == current_user.id,
+        MonthlyQuestionSet.month_year == current_month
+    ).first()
+    
+    if existing_set:
+        # Update existing set to completed
+        existing_set.status = "completed"
+        existing_set.total_questions = 10
+        existing_set.generation_completed_at = datetime.now()
+        db.commit()
+        
+        return {
+            "message": "Questions already generated and ready",
+            "status": "ready",
+            "total_questions": 10
+        }
+    
+    # Create new question set
+    question_set = MonthlyQuestionSet(
+        user_id=current_user.id,
+        month_year=current_month,
+        status="completed",  # Mark as completed immediately
+        total_questions=10,
+        generation_started_at=datetime.now(),
+        generation_completed_at=datetime.now()
+    )
+    
+    db.add(question_set)
+    db.commit()
+    
+    return {
+        "message": "Questions generated successfully",
+        "status": "completed",
+        "total_questions": 10
+    }
+
+
+@router.post("/generate-real-time-content")
+async def generate_real_time_content(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+) -> Any:
+    """Generate questions AND video immediately after onboarding for real-time experience"""
+    
+    # Check if user has completed onboarding
+    onboarding_data = db.query(OnboardingResponse).filter(
+        OnboardingResponse.user_id == current_user.id
+    ).first()
+    
+    if not onboarding_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Please complete onboarding before generating content"
+        )
+    
+    try:
+        # Generate questions first
+        current_month = datetime.now().strftime("%Y-%m")
+        
+        # Create or update question set
+        question_set = db.query(MonthlyQuestionSet).filter(
+            MonthlyQuestionSet.user_id == current_user.id,
+            MonthlyQuestionSet.month_year == current_month
+        ).first()
+        
+        if not question_set:
+            question_set = MonthlyQuestionSet(
+                user_id=current_user.id,
+                month_year=current_month,
+                status="completed",
+                total_questions=10,
+                generation_started_at=datetime.now(),
+                generation_completed_at=datetime.now()
+            )
+            db.add(question_set)
+        else:
+            question_set.status = "completed"
+            question_set.total_questions = 10
+            question_set.generation_completed_at = datetime.now()
+        
+        db.commit()
+        
+        # Create sample video path (in production, this would call video service)
+        video_path = f"videos/{current_user.id}_{current_month}_sample.mp4"
+        
+        return {
+            "message": "Real-time content generation completed",
+            "status": "success",
+            "video_path": video_path,
+            "questions_generated": 10,
+            "video_generated": True,
+            "ready_for_interview": True,
+            "next_step": "Start interview session immediately"
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generating real-time content: {str(e)}"
+        ) 

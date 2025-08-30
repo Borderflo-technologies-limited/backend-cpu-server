@@ -3,7 +3,7 @@
 Authentication endpoints for Visa AI Interviewer
 """
 
-from datetime import timedelta
+from datetime import timedelta, datetime
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -61,8 +61,8 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)) -> Any:
         full_name=db_user.full_name,
         is_active=db_user.is_active,
         is_verified=db_user.is_verified,
-        created_at=db_user.created_at,
-        updated_at=db_user.updated_at
+        created_at=db_user.created_at or datetime.utcnow(),
+        updated_at=db_user.updated_at or datetime.utcnow()
     )
 
 
